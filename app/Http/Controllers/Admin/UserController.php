@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUserRequest;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Role;
 
 class UserController extends Controller
 {
@@ -16,7 +18,8 @@ class UserController extends Controller
     public function index()
     {
         //
-      $users = User::all();
+    //   $users = User::all();
+    $users = User::paginate(10);
       return view('admin.users.index',['users'=>$users]);
     }
 
@@ -28,6 +31,8 @@ class UserController extends Controller
     public function create()
     {
         //
+        return view('admin.users.create',['roles'=>Role::all()]);
+
     }
 
     /**
@@ -36,9 +41,18 @@ class UserController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
         //
+        $validatedData = $request->validated();
+
+        // $user = User::create($request->except(['_token','roles']));
+        $user = User::create($validatedData);
+
+        $user->roles()->sync($request->roles);
+
+       $request->session()->flash('success','you have created the user');
+       return redirect(route('admin.users.index'));
     }
 
     /**
@@ -58,9 +72,16 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit($id,Request $request)
     {
         //
+
+        return view('admin.users.edit'
+        ,[
+            'roles'=>Role::all(),
+            'user'=>User::find($id)
+
+        ]);
     }
 
     /**
@@ -73,6 +94,20 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         //
+        //$user = User::findOrFail($id);
+        $user = User::find($id);
+
+        if(!$user){
+            $request->session()->flash('error','you can not edit this user.');
+
+            return redirect(route('admin.users.index'));
+        }
+
+        $user->update($request->except(['_token','roles']));
+        $user->roles()->sync($request->roles);
+
+        $request->session()->flash('success','you have edited the user');
+        return redirect(route('admin.users.index'));
     }
 
     /**
@@ -81,8 +116,12 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id, Request $request)
     {
         //
+        User::destroy($id);
+
+        $request->session()->flash('success','you have deleted the user');
+        return redirect(route('admin.users.index'));
     }
 }
