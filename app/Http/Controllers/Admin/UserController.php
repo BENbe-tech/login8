@@ -7,6 +7,7 @@ use App\Http\Requests\StoreUserRequest;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
+Use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
@@ -19,8 +20,13 @@ class UserController extends Controller
     {
         //
     //   $users = User::all();
-    $users = User::paginate(10);
-      return view('admin.users.index',['users'=>$users]);
+if(Gate::denies('logged-in')){
+    dd('no access allowed');
+}
+
+
+dd('you need to be admin');
+
     }
 
     /**
